@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Distributed Systems Master HUB | Comprehensive Learning & Simulation</title>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --sidebar-bg: #1e293b;
+            --card-bg: #334155;
+            --accent: #38bdf8;
+            --highlight: #f43f5e;
+            --success: #10b981;
+            --text-main: #f8fafc;
+            --text-dim: #94a3b8;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg);
+            color: var(--text-main);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Sidebar Navigation */
+        #sidebar {
+            width: 320px;
+            background: var(--sidebar-bg);
+            border-right: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            flex-direction: column;
+            box-shadow: 10px 0 30px rgba(0,0,0,0.5);
+            z-index: 100;
+        }
+
+        #sidebar header {
+            padding: 30px 20px;
+            background: linear-gradient(135deg, var(--sidebar-bg), #0f172a);
+            text-align: center;
+            border-bottom: 2px solid var(--accent);
+        }
+
+        #sidebar h2 { font-size: 1.2rem; letter-spacing: 1px; color: var(--accent); }
+        #sidebar p { font-size: 0.75rem; color: var(--text-dim); margin-top: 5px; }
+
+        #nav-list {
+            flex: 1;
+            overflow-y: auto;
+            list-style: none;
+            padding: 10px 0;
+        }
+
+        .nav-item {
+            padding: 15px 25px;
+            cursor: pointer;
+            border-left: 4px solid transparent;
+            transition: all 0.2s;
+            font-size: 0.9rem;
+            color: var(--text-dim);
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .nav-item:hover {
+            background: rgba(255,255,255,0.05);
+            color: var(--text-main);
+        }
+
+        .nav-item.active {
+            background: rgba(56, 189, 248, 0.1);
+            color: var(--accent);
+            border-left-color: var(--accent);
+            font-weight: 600;
+        }
+
+        /* Main Content Area */
+        #main {
+            flex: 1;
+            overflow-y: auto;
+            padding: 50px;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .content-section {
+            display: none;
+            max-width: 900px;
+            margin: 0 auto;
+            width: 100%;
+            animation: slideUp 0.4s ease-out;
+        }
+
+        .content-section.active { display: block; }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        h1 { font-size: 2.5rem; margin-bottom: 20px; background: linear-gradient(to right, #fff, var(--accent)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        h2 { font-size: 1.5rem; color: var(--accent); margin: 30px 0 15px; }
+        p { line-height: 1.7; margin-bottom: 20px; color: #cbd5e1; font-size: 1.05rem; }
+
+        /* Simulation Widgets */
+        .sim-box {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 30px;
+            border: 1px solid rgba(255,255,255,0.1);
+            margin: 20px 0;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+        }
+
+        .canvas {
+            width: 100%;
+            height: 380px;
+            background: #1e293b;
+            border-radius: 12px;
+            position: relative;
+            overflow: hidden;
+            margin: 20px 0;
+            border: 2px dashed rgba(255,255,255,0.1);
+        }
+
+        .node {
+            width: 60px;
+            height: 60px;
+            background: var(--accent);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: absolute;
+            font-weight: bold;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.4);
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .node:hover { transform: scale(1.1); box-shadow: 0 0 20px var(--accent); }
+        .node.leader { background: var(--highlight); border: 3px solid white; }
+        .node.syncing { animation: pulse 1s infinite; }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(56, 189, 248, 0.7); }
+            70% { box-shadow: 0 0 0 15px rgba(56, 189, 248, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(56, 189, 248, 0); }
+        }
+
+        .packet {
+            width: 18px;
+            height: 18px;
+            background: var(--success);
+            border-radius: 50%;
+            position: absolute;
+            z-index: 50;
+            box-shadow: 0 0 10px var(--success);
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        button {
+            padding: 12px 24px;
+            background: var(--accent);
+            color: #0f172a;
+            border: none;
+            border-radius: 8px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        button:hover { background: #7dd3fc; transform: translateY(-2px); }
+        button:active { transform: translateY(0); }
+        button:disabled { background: #475569; color: #94a3b8; cursor: not-allowed; }
+
+        .console {
+            background: #020617;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            color: var(--success);
+            height: 140px;
+            overflow-y: auto;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        /* Lab Code Highlighting */
+        pre {
+            background: #1e1e1e;
+            padding: 20px;
+            border-radius: 10px;
+            overflow-x: auto;
+            color: #d4d4d4;
+            margin: 15px 0;
+            border-left: 5px solid var(--accent);
+        }
+
+        #nav-footer {
+            margin-top: auto;
+            padding-top: 40px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+        .badge-theory { background: #4338ca; color: white; }
+        .badge-sim { background: #b91c1c; color: white; }
+    </style>
+</head>
+<body>
+
+<div id="sidebar">
+    <header>
+        <h2>DS MASTER HUB</h2>
+        <p>41 Lectures • 7 Labs • All Simulations</p>
+    </header>
+    <ul id="nav-list"></ul>
+</div>
+
+<div id="main">
+    <div id="sections-container"></div>
+    <div id="nav-footer">
+        <button onclick="changeSection(-1)">← Previous Lesson</button>
+        <button onclick="changeSection(1)">Next Lesson →</button>
+    </div>
+</div>
+
+<script>
+const courseContent = [
+    {
+        title: "L1-L3: Foundations & Goals",
+        content: `
+            <span class="badge badge-theory">Introductory</span>
+            <h1>The Distributed Revolution</h1>
+            <p>Welcome to the core of modern computing. A Distributed System (DS) is essentially a collection of autonomous processors that collaborate to solve a single problem, appearing to the user as one unified interface.</p>
+            
+            <div class="sim-box">
+                <h2>The Load Balancer Simulation</h2>
+                <p>In a DS, we use load balancers to distribute traffic. Click "Traffic Burst" to see how S1, S2, and S3 share the load.</p>
+                <div class="controls"><button onclick="runL1Sim()">Traffic Burst</button></div>
+                <div id="l1-canvas" class="canvas">
+                    <div id="l1-user" class="node" style="left: 30px; top: 160px; background: var(--success)">User</div>
+                    <div id="l1-lb" class="node" style="left: 170px; top: 160px; background: #6366f1">LB</div>
+                    <div class="node" style="right: 80px; top: 40px" id="s1">S1</div>
+                    <div class="node" style="right: 80px; top: 160px" id="s2">S2</div>
+                    <div class="node" style="right: 80px; top: 280px" id="s3">S3</div>
+                </div>
+                <div id="l1-log" class="console">System Idle.</div>
+            </div>
+            
+            <h2>Key Takeaways:</h2>
+            <ul>
+                <li><strong>Resource Sharing:</strong> Harder than it looks! Requires concurrency control.</li>
+                <li><strong>Scalability:</strong> Horizontal (more machines) vs Vertical (bigger CPU).</li>
+                <li><strong>Transparency:</strong> Hiding the distribution from the user.</li>
+            </ul>
+        `
+    },
+    {
+        title: "L4-L6: Logical Clocks (Lamport)",
+        content: `
+            <span class="badge badge-sim">Algorithm Focus</span>
+            <h1>Logical Time & Happens-Before</h1>
+            <p>Because physical clocks drift (Clock Drift), distributed systems rely on <strong>Logical Clocks</strong>. Leslie Lamport's algorithm ensures causal ordering of events.</p>
+            
+            <div class="sim-box">
+                <h2>Lamport Simulator</h2>
+                <p>Click a process to trigger an event. Click the "Msg" buttons below to send synchronization packets.</p>
+                <div id="l4-canvas" class="canvas"></div>
+                <div id="l4-log" class="console">Select a process to trigger an internal event.</div>
+            </div>
+
+            <h2>The Golden Rules:</h2>
+            <ol>
+                <li>Local: L = L + 1 before any event.</li>
+                <li>Msg Send: Attach current L to message.</li>
+                <li>Msg Receive: L_local = max(L_local, L_received) + 1.</li>
+            </ol>
+        `
+    },
+    {
+        title: "L13-L20: Chandy-Lamport Snapshots",
+        content: `
+            <span class="badge badge-sim">Complexity: High</span>
+            <h1>Consistent Global States</h1>
+            <p>How do we record the state of a system while messages are still in flight? We use <strong>Markers</strong> to define a <em>Consistent Cut</em>.</p>
+            
+            <div class="sim-box">
+                <h2>Marker Passing Visualization</h2>
+                <button onclick="startSnapshot()">Initiate Global Snapshot</button>
+                <div id="l13-canvas" class="canvas"></div>
+                <div id="l13-log" class="console">Waiting for initiator...</div>
+            </div>
+        `
+    },
+    {
+        title: "L21-L27: Leader Election (HS/Bully)",
+        content: `
+            <span class="badge badge-sim">Election Sim</span>
+            <h1>Coordination & Election</h1>
+            <p>Distributed systems often need a coordinator. If the current leader fails, an election algorithm is triggered. The <strong>Bully Algorithm</strong> uses IDs, while <strong>HS</strong> (Hirschberg-Sinclair) is optimized for rings.</p>
+            
+            <div class="sim-box">
+                <h2>The Bully Algorithm Sim</h2>
+                <div class="controls">
+                    <button onclick="killLeader()" style="background: var(--highlight)">Kill Node 5 (Leader)</button>
+                    <button onclick="resetElection()">Restart System</button>
+                </div>
+                <div id="l21-canvas" class="canvas"></div>
+                <div id="l21-log" class="console">Node 5 is current Coordinator. System healthy.</div>
+            </div>
+        `
+    },
+    {
+        title: "L30-L38: Fault Tolerance & 2PC",
+        content: `
+            <span class="badge badge-theory">Production Safety</span>
+            <h1>Atomic Commit (2PC)</h1>
+            <p>Two-Phase Commit ensures that either all participants commit a transaction, or they all abort. This is the foundation of distributed database consistency.</p>
+            
+            <div class="sim-box">
+                <h2>2PC Protocol Visualizer</h2>
+                <div class="controls">
+                    <button onclick="tpcPhase(1)">1. Send Prepare</button>
+                    <button onclick="tpcPhase(2)">2. Global Commit</button>
+                </div>
+                <div id="l30-canvas" class="canvas"></div>
+                <div id="l30-log" class="console">Coordinator ready. Transaction start.</div>
+            </div>
+        `
+    },
+    {
+        title: "L41: Blockchain & Decentralized Consensus",
+        content: `
+            <span class="badge badge-sim">Modern DS</span>
+            <h1>The Trustless Ledger</h1>
+            <p>Blockchain is a distributed linked list using <strong>Hash Pointers</strong>. If a block changes, the entire chain after it becomes invalid. Consensus is reached via Proof of Work (PoW).</p>
+            
+            <div class="sim-box">
+                <h2>Interactive Blockchain</h2>
+                <div class="controls">
+                    <input type="text" id="tx-input" placeholder="Tx Data..." style="background:#0f172a; color:white; border:1px solid #accent; padding:10px; border-radius:5px;">
+                    <button onclick="mine()">Mine New Block</button>
+                </div>
+                <div id="bc-shelf" style="display: flex; gap: 15px; padding: 20px; overflow-x: auto;"></div>
+                <div id="bc-log" class="console">Genesis Block Active.</div>
+            </div>
+        `
+    }
+];
+
+let currentSection = 0;
+
+function init() {
+    const list = document.getElementById('nav-list');
+    const container = document.getElementById('sections-container');
+    
+    courseContent.forEach((item, i) => {
+        const li = document.createElement('li');
+        li.className = 'nav-item' + (i === 0 ? ' active' : '');
+        li.innerHTML = `<span>${i+1}.</span> ${item.title}`;
+        li.onclick = () => show(i);
+        list.appendChild(li);
+
+        const sec = document.createElement('div');
+        sec.className = 'content-section' + (i === 0 ? ' active' : '');
+        sec.id = 'sec-' + i;
+        sec.innerHTML = item.content;
+        container.appendChild(sec);
+    });
+
+    show(0);
+}
+
+function show(idx) {
+    document.querySelectorAll('.nav-item').forEach((el, i) => el.classList.toggle('active', i === idx));
+    document.querySelectorAll('.content-section').forEach((el, i) => el.classList.toggle('active', i === idx));
+    currentSection = idx;
+    document.getElementById('main').scrollTop = 0;
+
+    // Load Simulators
+    if(idx === 1) setupL4();
+    if(idx === 2) setupL13();
+    if(idx === 3) setupL21();
+    if(idx === 4) setupL30();
+    if(idx === 5) setupBC();
+}
+
+function changeSection(dir) {
+    const next = currentSection + dir;
+    if(next >= 0 && next < courseContent.length) show(next);
+}
+
+// --- SIM: L1 ---
+function runL1Sim() {
+    const log = document.getElementById('l1-log');
+    log.innerHTML = "<b>User:</b> Initiating burst of 10 requests...";
+    const targets = ['s1', 's2', 's3'];
+    for(let i=0; i<10; i++) {
+        setTimeout(() => {
+            const pkt = document.createElement('div');
+            pkt.className = 'packet';
+            pkt.style.left = '70px'; pkt.style.top = '180px';
+            document.getElementById('l1-canvas').appendChild(pkt);
+            const target = targets[i % 3];
+            const targetEl = document.getElementById(target);
+            
+            pkt.animate([{left:'70px', top:'180px'}, {left:'170px', top:'180px'}], 400).onfinish = () => {
+                pkt.animate([{left:'170px', top:'180px'}, {left:'calc(100% - 100px)', top: targetEl.offsetTop + 20 + 'px'}], 600).onfinish = () => {
+                    log.innerHTML += `<br>> Routed request #${i+1} to ${target.toUpperCase()}`;
+                    log.scrollTop = log.scrollHeight;
+                    pkt.remove();
+                };
+            };
+        }, i * 150);
+    }
+}
+
+// --- SIM: L4 ---
+let l4Clocks = [0, 0, 0];
+function setupL4() {
+    const c = document.getElementById('l4-canvas');
+    c.innerHTML = ''; l4Clocks = [0,0,0];
+    for(let i=0; i<3; i++) {
+        const n = document.createElement('div');
+        n.className = 'node'; n.style.left = (60+i*130)+'px'; n.style.top = '100px';
+        n.innerHTML = `P${i}<br><span id="l4c-${i}">0</span>`;
+        n.onclick = () => { l4Clocks[i]++; updateL4(); logL4(`P${i} Event (Clock++).`); };
+        
+        const b = document.createElement('button');
+        b.innerText = 'Sync Msg'; b.style.position = 'absolute'; b.style.left = (50+i*130)+'px'; b.style.top = '180px';
+        b.style.padding = '5px'; b.style.fontSize = '0.7rem';
+        b.onclick = (e) => { e.stopPropagation(); l4Send(i); };
+        
+        c.appendChild(n); c.appendChild(b);
+    }
+}
+function updateL4() { l4Clocks.forEach((v, i) => document.getElementById('l4c-'+i).innerText = v); }
+function logL4(m) { const l = document.getElementById('l4-log'); l.innerHTML += `<br>> ${m}`; l.scrollTop = l.scrollHeight; }
+function l4Send(from) {
+    l4Clocks[from]++; updateL4();
+    const ts = l4Clocks[from];
+    logL4(`P${from} sending sync TS:${ts}`);
+    const to = (from + 1) % 3;
+    const p = document.createElement('div');
+    p.className = 'packet'; p.style.left = (90+from*130)+'px'; p.style.top = '120px';
+    document.getElementById('l4-canvas').appendChild(p);
+    p.animate([{left:(90+from*130)+'px'}, {left:(90+to*130)+'px'}], 1000).onfinish = () => {
+        l4Clocks[to] = Math.max(l4Clocks[to], ts) + 1;
+        updateL4();
+        logL4(`P${to} synced. New Clock: ${l4Clocks[to]}`);
+        p.remove();
+    };
+}
+
+// --- SIM: L21 ---
+function setupL21() {
+    const c = document.getElementById('l21-canvas');
+    c.innerHTML = '';
+    for(let i=1; i<=5; i++) {
+        const n = document.createElement('div');
+        n.className = 'node' + (i===5 ? ' leader' : '');
+        n.style.left = (20 + i*70) + 'px'; n.style.top = '150px';
+        n.innerText = i; n.id = 'n21-'+i;
+        c.appendChild(n);
+    }
+}
+function killLeader() {
+    const l = document.getElementById('n21-5');
+    if(!l) return;
+    l.style.background = '#444'; l.innerText = 'RIP';
+    const log = document.getElementById('l21-log');
+    log.innerHTML = "<b style='color:red'>FAILURE: Node 5 down.</b>";
+    setTimeout(() => {
+        log.innerHTML += "<br><b>Node 3:</b> Detecting failure. Sending ELECTION...";
+        runBully();
+    }, 1000);
+}
+function runBully() {
+    const log = document.getElementById('l21-log');
+    log.innerHTML += "<br>Node 3 &rarr; Node 4 (ELECTION)";
+    setTimeout(() => {
+        log.innerHTML += "<br>Node 4 &rarr; Node 3 (OK/STOP)";
+        log.innerHTML += "<br>Node 4 &rarr; Node 5 (ELECTION... No Response)";
+        setTimeout(() => {
+            log.innerHTML += "<br><b style='color:var(--success)'>Node 4: I am the new COORDINATOR.</b>";
+            document.getElementById('n21-4').classList.add('leader');
+        }, 1000);
+    }, 1000);
+}
+function resetElection() { setupL21(); document.getElementById('l21-log').innerHTML = "System Reset."; }
+
+// --- SIM: L30 ---
+function setupL30() {
+    const c = document.getElementById('l30-canvas'); c.innerHTML = '';
+    const coord = document.createElement('div');
+    coord.className = 'node'; coord.style.left = '160px'; coord.style.top = '20px';
+    coord.style.background = '#8e44ad'; coord.innerText = 'Coord';
+    c.appendChild(coord);
+    for(let i=0; i<3; i++) {
+        const n = document.createElement('div');
+        n.className = 'node'; n.id = 'tpc-p'+i;
+        n.style.left = (60+i*110)+'px'; n.style.top = '220px';
+        n.innerText = 'P'+(i+1);
+        c.appendChild(n);
+    }
+}
+function tpcPhase(p) {
+    const log = document.getElementById('l30-log');
+    if(p === 1) {
+        log.innerHTML = "<b>Coord:</b> PREPARE sent. Waiting for votes...";
+        document.querySelectorAll('[id^=tpc-p]').forEach(el => el.style.background = '#f59e0b');
+        setTimeout(() => log.innerHTML += "<br><b>All:</b> AGREED. Ready to commit.", 1000);
+    } else {
+        log.innerHTML = "<b>Coord:</b> GLOBAL_COMMIT broadcasted!";
+        document.querySelectorAll('[id^=tpc-p]').forEach(el => el.style.background = 'var(--success)');
+    }
+}
+
+// --- BLOCKCHAIN ---
+let chain = [{data: 'Genesis', hash: '0x8f2a', prev: '0x0000'}];
+function setupBC() { renderBC(); }
+function mine() {
+    const d = document.getElementById('tx-input').value || 'System Block';
+    const prev = chain[chain.length-1].hash;
+    const hash = '0x' + Math.floor(Math.random()*65535).toString(16);
+    chain.push({data: d, hash, prev});
+    renderBC();
+    document.getElementById('bc-log').innerHTML = `<b>Mined!</b> Hash: ${hash}`;
+    document.getElementById('tx-input').value = '';
+}
+function renderBC() {
+    const s = document.getElementById('bc-shelf'); s.innerHTML = '';
+    chain.forEach((b, i) => {
+        const blk = document.createElement('div');
+        blk.style.cssText = 'min-width:140px; background:white; color:#0f172a; padding:15px; border-radius:10px; border-top:5px solid var(--accent);';
+        blk.innerHTML = `<strong>Block #${i}</strong><br><small>Data: ${b.data}</small><br><small style='color:grey'>P: ${b.prev}</small><br><small style='color:var(--highlight)'>H: ${b.hash}</small>`;
+        s.appendChild(blk);
+    });
+}
+
+window.onload = init;
+</script>
+</body>
+</html>
